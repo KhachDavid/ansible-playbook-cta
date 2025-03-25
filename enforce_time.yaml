@@ -1,0 +1,25 @@
+---
+- hosts: nodes
+  become: yes
+  tasks:
+    - name: Get current timezone
+      command: timedatectl show --property=Timezone
+      register: timezone_check
+      changed_when: false
+
+    - name: Set timezone to America/Chicago
+      timezone:
+        name: America/Chicago
+      when: timezone_check.stdout != "Timezone=America/Chicago"
+
+    - name: Verify timezone is set to America/Chicago after potential change
+      command: timedatectl show --property=Timezone
+      register: timezone_verify
+      changed_when: false
+
+    - name: Final timezone verification
+      assert:
+        that:
+          - timezone_verify.stdout == "Timezone=America/Chicago"
+        fail_msg: "Failed to set timezone to America/Chicago. Current timezone: {{ timezone_verify.stdout }}"
+        success_msg: "Timezone is correctly set to America/Chicago"
